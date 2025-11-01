@@ -1,0 +1,1 @@
+{"version":3,"file":"hash.d.ts","sourceRoot":"","sources":["../../src/blockchain/hash.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,YAAY,CAAC;AAE5C,wBAAgB,aAAa,CAC3B,KAAK,EAAE,MAAM,EACb,QAAQ,EAAE,MAAM,EAChB,SAAS,EAAE,MAAM,EACjB,IAAI,EAAE,SAAS,GACd,MAAM,CAGR;AAED,wBAAgB,YAAY,CAAC,MAAM,EAAE,MAAM,GAAG,MAAM,CAEnD"}

@@ -139,99 +139,107 @@ curl http://localhost:3000/verify/file/67a1b2c3d4e5f6g7h8i9j0k1
 curl http://localhost:3000/verify/name/1730520000000-yourfile.pdf
 ```
 
-## Verification Scripts
+## Verification Script
 
-### 1. Verify Single File Integrity
+A unified verification script that checks both blockchain integrity and optionally verifies individual files.
 
-Verify that a file hasn't been tampered with by comparing its current hash to the blockchain record.
-
-```bash
-npm run verify:file <fileId>
-```
-
-**Example:**
-```bash
-npm run verify:file 67a1b2c3d4e5f6g7h8i9j0k1
-```
-
-**Output:**
-```
-Connecting to MongoDB...
-Retrieving file with ID: 67a1b2c3d4e5f6g7h8i9j0k1
-File retrieved and hashed
-File size: 2048 bytes
-
-Verification Results:
-==================================================
-Computed Hash : abc123def456...
-Block Hash    : abc123def456...
-==================================================
-
-VERIFIED: File hash matches block!
-
-Block Details:
-  - Index: 1
-  - Filename: 1730520000000-yourfile.pdf
-  - Timestamp: 2025-11-02T10:00:00Z
-  - Block Hash: xyz789abc123...
-  - Prev Hash: 0
-```
-
-**Exit Codes:**
-- `0`: File verified successfully
-- `2`: File mismatch detected
-- `1`: Error occurred
-
-### 2. Verify Entire Blockchain
+### Verify Blockchain Integrity
 
 Verify the integrity of the entire blockchain, checking all blocks and their links.
 
 ```bash
-npm run verify:chain
+npm run verify
 ```
 
 **Output:**
 ```
-Connecting to MongoDB...
-Retrieving blockchain...
-Found 3 blocks
+🔍 Connecting to MongoDB...
+✅ Connected to MongoDB
 
-================================================================================
-Verifying Blockchain Integrity
-================================================================================
+════════════════════════════════════════════════════════════════════════════════
+🔗 Verifying Blockchain Integrity
+════════════════════════════════════════════════════════════════════════════════
 
-================================================================================
-Block Details:
-================================================================================
+📦 Found 3 block(s)
 
-VERIFIED - Block 0
-   Filename: 1730520000000-file1.pdf
-   [OK] Hash verified
-   [OK] Chain link verified
+✅ CHAIN VERIFIED: All blocks are valid and properly linked!
 
-VERIFIED - Block 1
-   Filename: 1730519999000-file2.pdf
-   [OK] Hash verified
-   [OK] Chain link verified
+📋 Block Details:
+────────────────────────────────────────────────────────────────────────────────
+  Block 0: 1730520000000-file1.pdf
+  Block 1: 1730519999000-file2.pdf
+  Block 2: 1730519998000-file3.pdf
+────────────────────────────────────────────────────────────────────────────────
 
-VERIFIED - Block 2
-   Filename: 1730519998000-file3.pdf
-   [OK] Hash verified
-   [OK] Chain link verified
-
-================================================================================
-CHAIN VERIFIED: All blocks are valid and properly linked!
-================================================================================
-
-Blockchain Integrity: CONFIRMED
+🎉 Blockchain Integrity: CONFIRMED
    - Total blocks: 3
-   - All hash links: [OK]
-   - Chain continuity: [OK]
+   - All hash links: ✓
+   - Chain continuity: ✓
+
+💡 Tip: To verify a specific file, pass the file ID as an argument:
+   npm run verify <fileId>
+
+════════════════════════════════════════════════════════════════════════════════
+✅ BLOCKCHAIN SYSTEM STATUS: OPERATIONAL
+════════════════════════════════════════════════════════════════════════════════
+```
+
+### Verify Blockchain + Specific File
+
+Verify both blockchain integrity and a specific file's integrity.
+
+```bash
+npm run verify <fileId>
+```
+
+**Example:**
+```bash
+npm run verify 67a1b2c3d4e5f6g7h8i9j0k1
+```
+
+**Output:**
+```
+🔍 Connecting to MongoDB...
+✅ Connected to MongoDB
+
+════════════════════════════════════════════════════════════════════════════════
+🔗 Verifying Blockchain Integrity
+════════════════════════════════════════════════════════════════════════════════
+
+📦 Found 3 block(s)
+
+✅ CHAIN VERIFIED: All blocks are valid and properly linked!
+
+🎉 Blockchain Integrity: CONFIRMED
+
+════════════════════════════════════════════════════════════════════════════════
+📄 Verifying File Integrity
+════════════════════════════════════════════════════════════════════════════════
+📂 File ID: 67a1b2c3d4e5f6g7h8i9j0k1
+
+📊 Verification Results:
+────────────────────────────────────────────────────────────────────────────────
+Computed Hash : abc123def456...
+Block Hash    : abc123def456...
+────────────────────────────────────────────────────────────────────────────────
+
+✅ FILE VERIFIED: File hash matches blockchain record!
+
+📦 Block Details:
+   - Index: 1
+   - Filename: 1730520000000-yourfile.pdf
+   - Timestamp: 2025-11-02T10:00:00Z
+   - Block Hash: xyz789abc123...
+   - Prev Hash: 0
+
+════════════════════════════════════════════════════════════════════════════════
+✅ BLOCKCHAIN SYSTEM STATUS: OPERATIONAL
+════════════════════════════════════════════════════════════════════════════════
 ```
 
 **Exit Codes:**
-- `0`: Blockchain valid
-- `1`: Tampering detected or error
+- `0`: Verification successful (blockchain valid, file verified if provided)
+- `1`: Verification failed (tampering detected or error occurred)
 
 ## How It Works
 
@@ -316,23 +324,23 @@ If Any Invalid -> Tampering Detected
    ```
    Save the returned `fileId`.
 
-2. **Verify file immediately:**
+2. **Verify blockchain integrity:**
    ```bash
-   npm run verify:file <fileId>
+   npm run verify
    ```
-   Output: VERIFIED
+   Output: Blockchain integrity confirmed
 
-3. **Verify blockchain integrity:**
+3. **Verify blockchain + specific file:**
    ```bash
-   npm run verify:chain
+   npm run verify <fileId>
    ```
-   Output: CHAIN VERIFIED
+   Output: Both blockchain and file verified
 
 4. **If file is tampered (manually modified), verification will fail:**
    ```bash
-   npm run verify:file <fileId>
+   npm run verify <fileId>
    ```
-   Output: MISMATCH: File has been modified or corrupted!
+   Output: File mismatch detected - file has been modified or corrupted!
 
 ## Troubleshooting
 
@@ -359,13 +367,36 @@ No block found for this file ID
 ### Project Structure
 ```
 src/
-  └── index.ts          # Main server and API endpoints
+  ├── blockchain/       # Blockchain core modules
+  │   ├── types.ts      # Type definitions (Block, BlockData)
+  │   ├── hash.ts       # Hash calculation functions
+  │   └── chain.ts      # Blockchain operations (add, get, verify)
+  ├── storage/          # File storage modules
+  │   └── gridfs.ts     # GridFS operations (read, upload, hash)
+  ├── routes/           # API route handlers
+  │   ├── upload.ts     # File upload handler
+  │   ├── files.ts      # File listing and download handlers
+  │   ├── chain.ts      # Blockchain retrieval handler
+  │   └── verify.ts     # File verification handlers
+  ├── config/           # Configuration modules
+  │   └── database.ts   # Database connection and config
+  └── index.ts          # Main server file (Express app setup)
 scripts/
-  ├── verifyFile.ts     # Single file verification script
-  └── verifyChain.ts    # Blockchain integrity verification script
+  └── verify.ts         # Unified verification script (blockchain + file)
 public/
-  └── index.html        # Frontend files
+  └── index.html        # Frontend upload interface
 ```
+
+### Modular Architecture
+
+The codebase is organized into focused modules:
+
+- **Blockchain Module**: Handles all blockchain operations including block creation, hash calculation, and chain verification
+- **Storage Module**: Manages GridFS file operations (upload, read, hash computation)
+- **Routes Module**: Contains route handlers separated by functionality
+- **Config Module**: Centralized database configuration
+
+This modular structure makes the codebase easier to maintain, test, and extend.
 
 ### Technologies Used
 - **TypeScript**: Type-safe JavaScript

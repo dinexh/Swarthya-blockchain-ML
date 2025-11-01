@@ -7,79 +7,68 @@ import { handleUpload } from './routes/upload.js';
 import { handleListFiles, handleDownloadFile } from './routes/files.js';
 import { handleGetChain } from './routes/chain.js';
 import { handleVerifyByFileId, handleVerifyByFilename } from './routes/verify.js';
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
-
 // Multer configuration
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
-
 // Initialize database connection
 const { connection: conn, bucket } = await connectDatabase();
-
 // Wait for bucket to be ready
-let gfsBucket: mongoose.mongo.GridFSBucket | null = bucket;
+let gfsBucket = bucket;
 conn.once('open', () => {
-  if (conn.db) {
-    gfsBucket = new mongoose.mongo.GridFSBucket(conn.db, { bucketName: 'uploads' });
-  }
+    if (conn.db) {
+        gfsBucket = new mongoose.mongo.GridFSBucket(conn.db, { bucketName: 'uploads' });
+    }
 });
-
 // Wait for connection to be ready
-await new Promise<void>((resolve) => {
-  if (conn.readyState === 1) {
-    resolve();
-  } else {
-    conn.once('open', () => resolve());
-  }
+await new Promise((resolve) => {
+    if (conn.readyState === 1) {
+        resolve();
+    }
+    else {
+        conn.once('open', () => resolve());
+    }
 });
-
 // Ensure bucket is initialized
 if (conn.db && !gfsBucket) {
-  gfsBucket = new mongoose.mongo.GridFSBucket(conn.db, { bucketName: 'uploads' });
+    gfsBucket = new mongoose.mongo.GridFSBucket(conn.db, { bucketName: 'uploads' });
 }
-
 // Routes
 app.post('/upload', upload.single('file'), async (req, res) => {
-  if (!gfsBucket) {
-    return res.status(500).json({ error: 'GridFS not initialized yet' });
-  }
-  await handleUpload(req, res, conn, gfsBucket);
+    if (!gfsBucket) {
+        return res.status(500).json({ error: 'GridFS not initialized yet' });
+    }
+    await handleUpload(req, res, conn, gfsBucket);
 });
-
 app.get('/files', async (req, res) => {
-  if (!gfsBucket) {
-    return res.status(500).json({ error: 'GridFS not initialized yet' });
-  }
-  await handleListFiles(req, res, gfsBucket);
+    if (!gfsBucket) {
+        return res.status(500).json({ error: 'GridFS not initialized yet' });
+    }
+    await handleListFiles(req, res, gfsBucket);
 });
-
 app.get('/file/:filename', async (req, res) => {
-  if (!gfsBucket) {
-    return res.status(500).json({ error: 'GridFS not initialized yet' });
-  }
-  await handleDownloadFile(req, res, gfsBucket);
+    if (!gfsBucket) {
+        return res.status(500).json({ error: 'GridFS not initialized yet' });
+    }
+    await handleDownloadFile(req, res, gfsBucket);
 });
-
 app.get('/chain', async (req, res) => {
-  await handleGetChain(req, res, conn);
+    await handleGetChain(req, res, conn);
 });
-
 app.get('/verify/file/:fileId', async (req, res) => {
-  if (!gfsBucket) {
-    return res.status(500).json({ error: 'GridFS not ready' });
-  }
-  await handleVerifyByFileId(req, res, conn);
+    if (!gfsBucket) {
+        return res.status(500).json({ error: 'GridFS not ready' });
+    }
+    await handleVerifyByFileId(req, res, conn);
 });
-
 app.get('/verify/name/:filename', async (req, res) => {
-  if (!gfsBucket) {
-    return res.status(500).json({ error: 'GridFS not ready' });
-  }
-  await handleVerifyByFilename(req, res, conn);
+    if (!gfsBucket) {
+        return res.status(500).json({ error: 'GridFS not ready' });
+    }
+    await handleVerifyByFilename(req, res, conn);
 });
-
 app.listen(port, () => console.log('Server listening on', port));
+//# sourceMappingURL=index.js.map

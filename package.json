@@ -8,8 +8,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "verify:file": "tsx scripts/verifyFile.ts",
-    "verify:chain": "tsx scripts/verifyChain.ts"
+    "verify": "tsx scripts/verify.ts"
   },
   "repository": {
     "type": "git",

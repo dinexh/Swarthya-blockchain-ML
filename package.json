@@ -1,0 +1,38 @@
+{
+  "name": "swarthya-blockchain-ml",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dinexh/Swarthya-blockchain-ML.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dinexh/Swarthya-blockchain-ML/issues"
+  },
+  "homepage": "https://github.com/dinexh/Swarthya-blockchain-ML#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "gridfs-stream": "^1.1.1",
+    "mongoose": "^8.19.2",
+    "multer": "^1.4.4",
+    "multer-gridfs-storage": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}

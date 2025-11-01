@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Upload PDF</title></head>
+  <body>
+    <h1>Upload PDF to GridFS</h1>
+    <form id="f" enctype="multipart/form-data" method="post" action="/upload">
+      <input type="file" name="file" accept=".pdf,.png,.jpg" required />
+      <button type="submit">Upload</button>
+    </form>
+    <hr/>
+    <div>
+      <button id="list">List files</button>
+      <pre id="out"></pre>
+    </div>
+    <script>
+      document.getElementById('list').onclick = async () => {
+        const r = await fetch('/files'); const j = await r.json();
+        document.getElementById('out').textContent = JSON.stringify(j, null, 2);
+      };
+    </script>
+  </body>
+</html>

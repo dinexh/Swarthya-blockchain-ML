@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { Block, BlockData } from './types.js';
+import type { Block, BlockData, BlockSearchFilters } from './types.js';
 import { calcBlockHash } from './hash.js';
 
 export async function getLastBlock(conn: mongoose.Connection): Promise<Block | null> {
@@ -28,6 +28,63 @@ export async function getBlockByFileHash(conn: mongoose.Connection, fileHash: st
   const coll = conn.db.collection('blocks');
   const block = await coll.findOne({ 'data.fileHash': fileHash });
   return block as any as Block | null;
+}
+
+export async function getBlocksByPatientId(conn: mongoose.Connection, patientId: string): Promise<Block[]> {
+  if (!conn.db) return [];
+  const coll = conn.db.collection('blocks');
+  const blocks = await coll.find({ 'data.patientId': patientId }).sort({ index: 1 }).toArray();
+  return blocks as any as Block[];
+}
+
+export async function getBlocksByLabel(conn: mongoose.Connection, label: string): Promise<Block[]> {
+  if (!conn.db) return [];
+  const coll = conn.db.collection('blocks');
+  const blocks = await coll.find({ 'data.labels': label }).sort({ index: 1 }).toArray();
+  return blocks as any as Block[];
+}
+
+export async function getBlocksByTag(conn: mongoose.Connection, tag: string): Promise<Block[]> {
+  if (!conn.db) return [];
+  const coll = conn.db.collection('blocks');
+  const blocks = await coll.find({ 'data.tags': tag }).sort({ index: 1 }).toArray();
+  return blocks as any as Block[];
+}
+
+export async function searchBlocks(conn: mongoose.Connection, filters: BlockSearchFilters): Promise<Block[]> {
+  if (!conn.db) return [];
+  const coll = conn.db.collection('blocks');
+  
+  const query: any = {};
+  
+  if (filters.patientId) {
+    query['data.patientId'] = filters.patientId;
+  }
+  
+  if (filters.labels && filters.labels.length > 0) {
+    query['data.labels'] = { $in: filters.labels };
+  }
+  
+  if (filters.tags && filters.tags.length > 0) {
+    query['data.tags'] = { $in: filters.tags };
+  }
+  
+  if (filters.recordType) {
+    query['data.metadata.recordType'] = filters.recordType;
+  }
+  
+  if (filters.dateFrom || filters.dateTo) {
+    query.timestamp = {};
+    if (filters.dateFrom) {
+      query.timestamp.$gte = filters.dateFrom;
+    }
+    if (filters.dateTo) {
+      query.timestamp.$lte = filters.dateTo;
+    }
+  }
+  
+  const blocks = await coll.find(query).sort({ index: 1 }).toArray();
+  return blocks as any as Block[];
 }
 
 export async function addBlockToChain(conn: mongoose.Connection, data: BlockData): Promise<Block> {

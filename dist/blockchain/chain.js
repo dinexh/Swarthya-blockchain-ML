@@ -28,6 +28,56 @@ export async function getBlockByFileHash(conn, fileHash) {
     const block = await coll.findOne({ 'data.fileHash': fileHash });
     return block;
 }
+export async function getBlocksByPatientId(conn, patientId) {
+    if (!conn.db)
+        return [];
+    const coll = conn.db.collection('blocks');
+    const blocks = await coll.find({ 'data.patientId': patientId }).sort({ index: 1 }).toArray();
+    return blocks;
+}
+export async function getBlocksByLabel(conn, label) {
+    if (!conn.db)
+        return [];
+    const coll = conn.db.collection('blocks');
+    const blocks = await coll.find({ 'data.labels': label }).sort({ index: 1 }).toArray();
+    return blocks;
+}
+export async function getBlocksByTag(conn, tag) {
+    if (!conn.db)
+        return [];
+    const coll = conn.db.collection('blocks');
+    const blocks = await coll.find({ 'data.tags': tag }).sort({ index: 1 }).toArray();
+    return blocks;
+}
+export async function searchBlocks(conn, filters) {
+    if (!conn.db)
+        return [];
+    const coll = conn.db.collection('blocks');
+    const query = {};
+    if (filters.patientId) {
+        query['data.patientId'] = filters.patientId;
+    }
+    if (filters.labels && filters.labels.length > 0) {
+        query['data.labels'] = { $in: filters.labels };
+    }
+    if (filters.tags && filters.tags.length > 0) {
+        query['data.tags'] = { $in: filters.tags };
+    }
+    if (filters.recordType) {
+        query['data.metadata.recordType'] = filters.recordType;
+    }
+    if (filters.dateFrom || filters.dateTo) {
+        query.timestamp = {};
+        if (filters.dateFrom) {
+            query.timestamp.$gte = filters.dateFrom;
+        }
+        if (filters.dateTo) {
+            query.timestamp.$lte = filters.dateTo;
+        }
+    }
+    const blocks = await coll.find(query).sort({ index: 1 }).toArray();
+    return blocks;
+}
 export async function addBlockToChain(conn, data) {
     if (!conn.db)
         throw new Error('Database connection not ready');

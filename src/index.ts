@@ -7,6 +7,17 @@ import { handleUpload } from './routes/upload.js';
 import { handleListFiles, handleDownloadFile } from './routes/files.js';
 import { handleGetChain } from './routes/chain.js';
 import { handleVerifyByFileId, handleVerifyByFilename } from './routes/verify.js';
+import {
+  handleGetRecordsByPatient,
+  handleGetRecordsByLabel,
+  handleGetRecordsByTag,
+  handleSearchRecords
+} from './routes/records.js';
+import {
+  handleDiagnose,
+  handleAnalyzeImage,
+  handleAnalyzeSymptoms
+} from './routes/ai-ml.js';
 
 const app = express();
 app.use(cors());
@@ -80,6 +91,36 @@ app.get('/verify/name/:filename', async (req, res) => {
     return res.status(500).json({ error: 'GridFS not ready' });
   }
   await handleVerifyByFilename(req, res, conn);
+});
+
+// Record query routes
+app.get('/records/patient/:patientId', async (req, res) => {
+  await handleGetRecordsByPatient(req, res, conn);
+});
+
+app.get('/records/label/:label', async (req, res) => {
+  await handleGetRecordsByLabel(req, res, conn);
+});
+
+app.get('/records/tag/:tag', async (req, res) => {
+  await handleGetRecordsByTag(req, res, conn);
+});
+
+app.get('/records/search', async (req, res) => {
+  await handleSearchRecords(req, res, conn);
+});
+
+// AI/ML routes
+app.post('/ai/diagnose', async (req, res) => {
+  await handleDiagnose(req, res, conn);
+});
+
+app.post('/ai/analyze-image', upload.single('image'), async (req, res) => {
+  await handleAnalyzeImage(req, res, conn);
+});
+
+app.post('/ai/analyze-symptoms', async (req, res) => {
+  await handleAnalyzeSymptoms(req, res, conn);
 });
 
 app.listen(port, () => console.log('Server listening on', port));

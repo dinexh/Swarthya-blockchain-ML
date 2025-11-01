@@ -16,6 +16,33 @@ export async function handleUpload(
       return;
     }
 
+    // Extract metadata from request body
+    const { patientId, labels, tags, metadata } = req.body;
+    
+    // Validate required fields
+    if (!patientId) {
+      res.status(400).json({ error: 'patientId is required' });
+      return;
+    }
+
+    // Parse labels and tags (can be JSON strings or arrays)
+    let labelsArray: string[] = [];
+    let tagsArray: string[] = [];
+    let metadataObj: any = {};
+
+    try {
+      labelsArray = labels ? (typeof labels === 'string' ? JSON.parse(labels) : labels) : [];
+      tagsArray = tags ? (typeof tags === 'string' ? JSON.parse(tags) : tags) : [];
+      metadataObj = metadata ? (typeof metadata === 'string' ? JSON.parse(metadata) : metadata) : {};
+    } catch (parseError) {
+      res.status(400).json({ error: 'Invalid JSON format for labels, tags, or metadata' });
+      return;
+    }
+
+    // Ensure arrays
+    if (!Array.isArray(labelsArray)) labelsArray = [];
+    if (!Array.isArray(tagsArray)) tagsArray = [];
+
     const filename = `${Date.now()}-${req.file.originalname}`;
 
     // Upload to GridFS
@@ -30,12 +57,16 @@ export async function handleUpload(
     // Compute file hash
     const fileHash = await computeFileHash(conn, 'uploads', filename, false);
 
-    // Add block to chain
+    // Add block to chain with metadata
     const block = await addBlockToChain(conn, {
       fileId: fileId,
       filename: filename,
       fileHash: fileHash,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      patientId: patientId,
+      labels: labelsArray,
+      tags: tagsArray,
+      metadata: metadataObj
     });
 
     res.json({

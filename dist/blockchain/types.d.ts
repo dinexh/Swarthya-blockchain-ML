@@ -3,6 +3,17 @@ export type BlockData = {
     filename: string;
     fileHash: string;
     timestamp: number;
+    patientId: string;
+    labels: string[];
+    tags: string[];
+    metadata?: {
+        recordType?: string;
+        doctorName?: string;
+        clinicName?: string;
+        dateOfVisit?: string;
+        description?: string;
+        [key: string]: any;
+    };
 };
 export type Block = {
     index: number;
@@ -10,5 +21,13 @@ export type Block = {
     data: BlockData;
     prevHash: string;
     hash: string;
+};
+export type BlockSearchFilters = {
+    patientId?: string;
+    labels?: string[];
+    tags?: string[];
+    dateFrom?: number;
+    dateTo?: number;
+    recordType?: string;
 };
 //# sourceMappingURL=types.d.ts.map

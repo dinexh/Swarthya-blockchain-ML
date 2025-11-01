@@ -1,22 +1,397 @@
-<!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>Upload PDF</title></head>
-  <body>
-    <h1>Upload PDF to GridFS</h1>
-    <form id="f" enctype="multipart/form-data" method="post" action="/upload">
-      <input type="file" name="file" accept=".pdf,.png,.jpg" required />
-      <button type="submit">Upload</button>
-    </form>
-    <hr/>
-    <div>
-      <button id="list">List files</button>
-      <pre id="out"></pre>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarthya Health Records - Test UI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="file"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .result h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .result pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .suggestion-card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .suggestion-card h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        .probability {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .tag-input {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Swarthya Health Records</h1>
+        <p class="subtitle">Upload Medical Records & AI Diagnosis Testing</p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('upload')">📤 Upload Record</button>
+            <button class="tab" onclick="showTab('diagnose')">🤖 AI Diagnosis</button>
+            <button class="tab" onclick="showTab('search')">🔍 Search Records</button>
+        </div>
+
+        <!-- Upload Tab -->
+        <div id="upload" class="tab-content active">
+            <h2>Upload Medical Record</h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label>Patient ID *</label>
+                    <input type="text" id="patientId" placeholder="e.g., patient123" required value="patient001">
+                </div>
+                <div class="form-group">
+                    <label>File *</label>
+                    <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" required>
+                </div>
+                <div class="form-group">
+                    <label>Labels (comma-separated)</label>
+                    <input type="text" id="labels" placeholder="e.g., lab-report, blood-test" value="lab-report">
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma-separated)</label>
+                    <input type="text" id="tags" placeholder="e.g., diabetes, annual-checkup" value="diabetes">
+                </div>
+                <div class="form-group">
+                    <label>Record Type</label>
+                    <input type="text" id="recordType" placeholder="e.g., lab-report, x-ray, prescription">
+                </div>
+                <div class="form-group">
+                    <label>Doctor Name</label>
+                    <input type="text" id="doctorName" placeholder="e.g., Dr. Smith">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="description" placeholder="Additional notes about this record"></textarea>
+                </div>
+                <button type="submit">Upload to Blockchain</button>
+            </form>
+            <div id="uploadResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- AI Diagnosis Tab -->
+        <div id="diagnose" class="tab-content">
+            <h2>AI-Powered Diagnosis</h2>
+            <form id="diagnoseForm">
+                <div class="form-group">
+                    <label>Patient ID (optional - to include past records)</label>
+                    <input type="text" id="diagnosePatientId" placeholder="e.g., patient001">
+                </div>
+                <div class="form-group">
+                    <label>Symptoms * (comma-separated)</label>
+                    <input type="text" id="symptoms" placeholder="e.g., fever, headache, fatigue" required value="fever, headache, fatigue">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="symptomDescription" placeholder="Describe how long you've had these symptoms, severity, etc.">Feeling unwell for 2 days</textarea>
+                </div>
+                <button type="submit">Get AI Diagnosis</button>
+            </form>
+            <div id="diagnoseResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Search Tab -->
+        <div id="search" class="tab-content">
+            <h2>Search Records</h2>
+            <form id="searchForm">
+                <div class="form-group">
+                    <label>Patient ID</label>
+                    <input type="text" id="searchPatientId" placeholder="e.g., patient001">
+                </div>
+                <div class="form-group">
+                    <label>Labels (comma-separated)</label>
+                    <input type="text" id="searchLabels" placeholder="e.g., lab-report, x-ray">
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma-separated)</label>
+                    <input type="text" id="searchTags" placeholder="e.g., diabetes, urgent">
+                </div>
+                <button type="submit">Search Records</button>
+            </form>
+            <div id="searchResult" class="result" style="display:none;"></div>
+        </div>
     </div>
+
     <script>
-      document.getElementById('list').onclick = async () => {
-        const r = await fetch('/files'); const j = await r.json();
-        document.getElementById('out').textContent = JSON.stringify(j, null, 2);
-      };
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Upload Form
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('uploadResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>Uploading...</p>';
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('fileInput');
+            formData.append('file', fileInput.files[0]);
+            formData.append('patientId', document.getElementById('patientId').value);
+            formData.append('labels', '[' + document.getElementById('labels').value.split(',').map(l => `"${l.trim()}"`).join(',') + ']');
+            formData.append('tags', '[' + document.getElementById('tags').value.split(',').map(t => `"${t.trim()}"`).join(',') + ']');
+
+            const metadata = {};
+            if (document.getElementById('recordType').value) metadata.recordType = document.getElementById('recordType').value;
+            if (document.getElementById('doctorName').value) metadata.doctorName = document.getElementById('doctorName').value;
+            if (document.getElementById('description').value) metadata.description = document.getElementById('description').value;
+            if (Object.keys(metadata).length > 0) {
+                formData.append('metadata', JSON.stringify(metadata));
+            }
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>✅ Upload Successful!</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>❌ Error</h3><pre>${error.message}</pre>`;
+            }
+        });
+
+        // Diagnosis Form
+        document.getElementById('diagnoseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('diagnoseResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>Analyzing with AI...</p>';
+
+            const symptoms = document.getElementById('symptoms').value.split(',').map(s => s.trim());
+            const body = {
+                symptoms: symptoms,
+                description: document.getElementById('symptomDescription').value
+            };
+            if (document.getElementById('diagnosePatientId').value) {
+                body.patientId = document.getElementById('diagnosePatientId').value;
+            }
+
+            try {
+                const response = await fetch('/ai/diagnose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await response.json();
+                
+                if (data.success && data.diagnosis) {
+                    let html = '<h3>🤖 AI Diagnosis Results</h3>';
+                    html += `<p><strong>Confidence:</strong> ${(data.diagnosis.confidence * 100).toFixed(1)}%</p>`;
+                    html += `<p><strong>Analysis:</strong> ${data.diagnosis.analysis}</p>`;
+                    
+                    if (data.diagnosis.suggestions && data.diagnosis.suggestions.length > 0) {
+                        html += '<h4>Suggested Conditions:</h4>';
+                        data.diagnosis.suggestions.forEach(suggestion => {
+                            html += `
+                                <div class="suggestion-card">
+                                    <span class="probability">${(suggestion.probability * 100).toFixed(0)}% probability</span>
+                                    <h4>${suggestion.condition}</h4>
+                                    ${suggestion.description ? `<p>${suggestion.description}</p>` : ''}
+                                    ${suggestion.recommendations ? `<p><strong>Recommendations:</strong><br>${suggestion.recommendations.join('<br>')}</p>` : ''}
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    if (data.diagnosis.pastRecords && data.diagnosis.pastRecords.length > 0) {
+                        html += `<h4>📋 Found ${data.diagnosis.pastRecords.length} Relevant Past Records</h4>`;
+                    }
+                    
+                    html += '<details><summary>Full Response</summary><pre>' + JSON.stringify(data, null, 2) + '</pre></details>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<h3>Response</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>❌ Error</h3><pre>${error.message}</pre>`;
+            }
+        });
+
+        // Search Form
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultDiv = document.getElementById('searchResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>Searching...</p>';
+
+            const params = new URLSearchParams();
+            if (document.getElementById('searchPatientId').value) {
+                params.append('patientId', document.getElementById('searchPatientId').value);
+            }
+            if (document.getElementById('searchLabels').value) {
+                params.append('labels', document.getElementById('searchLabels').value);
+            }
+            if (document.getElementById('searchTags').value) {
+                params.append('tags', document.getElementById('searchTags').value);
+            }
+
+            try {
+                const response = await fetch('/records/search?' + params.toString());
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>🔍 Search Results</h3>
+                    <p><strong>Found:</strong> ${data.count} records</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<h3>❌ Error</h3><pre>${error.message}</pre>`;
+            }
+        });
     </script>
-  </body>
+</body>
 </html>

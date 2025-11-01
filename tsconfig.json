@@ -41,6 +41,8 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
 
-    "esModuleInterop": true,
-  }
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "scripts"]
 }

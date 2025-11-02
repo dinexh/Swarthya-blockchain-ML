@@ -9,10 +9,16 @@ export async function handleDiagnose(req, res, conn) {
             res.status(400).json({ error: 'Symptoms array is required' });
             return;
         }
-        // Get past records if patientId provided
+        // Get past records if patientId provided and database is available
         let pastRecords = [];
-        if (patientId) {
-            pastRecords = await getBlocksByPatientId(conn, patientId);
+        if (patientId && conn && typeof conn.db === 'object') {
+            try {
+                pastRecords = await getBlocksByPatientId(conn, patientId);
+            }
+            catch (dbError) {
+                console.warn('Could not fetch past records from database:', dbError);
+                // Continue without past records for testing
+            }
         }
         const diagnosis = await aiMLService.diagnose({
             symptoms,
@@ -32,8 +38,8 @@ export async function handleDiagnose(req, res, conn) {
 export async function handleAnalyzeImage(req, res, conn) {
     try {
         const { imageUrl, imageBase64, patientId } = req.body;
-        if (!imageUrl && !imageBase64) {
-            res.status(400).json({ error: 'Either imageUrl or imageBase64 is required' });
+        if (!imageUrl && !imageBase64 && !req.file) {
+            res.status(400).json({ error: 'Either imageUrl, imageBase64, or uploaded file is required' });
             return;
         }
         // If image is uploaded via file, convert to base64

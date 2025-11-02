@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 export const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/swasthya';
-export const port = Number(process.env.PORT || 3000);
+export const port = Number(process.env.PORT || 4000);
 export async function connectDatabase() {
     await mongoose.connect(mongoUri);
     const conn = mongoose.connection;

@@ -7,7 +7,7 @@ import { readFileFromGridFS } from '../storage/gridfs.js';
 export async function handleDiagnose(
   req: Request,
   res: Response,
-  conn: mongoose.Connection
+  conn: mongoose.Connection | null
 ): Promise<void> {
   try {
     const { symptoms, patientId, description } = req.body;
@@ -17,10 +17,15 @@ export async function handleDiagnose(
       return;
     }
 
-    // Get past records if patientId provided
+    // Get past records if patientId provided and database is available
     let pastRecords: any[] = [];
-    if (patientId) {
-      pastRecords = await getBlocksByPatientId(conn, patientId);
+    if (patientId && conn && typeof conn.db === 'object') {
+      try {
+        pastRecords = await getBlocksByPatientId(conn, patientId);
+      } catch (dbError) {
+        console.warn('Could not fetch past records from database:', dbError);
+        // Continue without past records for testing
+      }
     }
 
     const diagnosis = await aiMLService.diagnose(
@@ -45,13 +50,13 @@ export async function handleDiagnose(
 export async function handleAnalyzeImage(
   req: Request,
   res: Response,
-  conn: mongoose.Connection
+  conn: mongoose.Connection | null
 ): Promise<void> {
   try {
     const { imageUrl, imageBase64, patientId } = req.body;
 
-    if (!imageUrl && !imageBase64) {
-      res.status(400).json({ error: 'Either imageUrl or imageBase64 is required' });
+    if (!imageUrl && !imageBase64 && !req.file) {
+      res.status(400).json({ error: 'Either imageUrl, imageBase64, or uploaded file is required' });
       return;
     }
 
@@ -80,7 +85,7 @@ export async function handleAnalyzeImage(
 export async function handleAnalyzeSymptoms(
   req: Request,
   res: Response,
-  conn: mongoose.Connection
+  conn: mongoose.Connection | null
 ): Promise<void> {
   try {
     const { symptoms, description } = req.body;

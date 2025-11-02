@@ -17,6 +17,14 @@ export declare class AIMLService {
      * Analyze symptoms with text description
      */
     analyzeSymptomsText(symptoms: string[], description?: string): Promise<DiagnosisResponse>;
+    /**
+     * Mock diagnosis response for testing when APIs are not available
+     */
+    private getMockDiagnosisResponse;
+    /**
+     * Mock image analysis response for testing when APIs are not available
+     */
+    private getMockImageAnalysisResponse;
 }
 export declare const aiMLService: AIMLService;
 //# sourceMappingURL=index.d.ts.map

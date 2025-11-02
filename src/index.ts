@@ -20,7 +20,21 @@ import {
 } from './routes/ai-ml.js';
 
 const app = express();
-app.use(cors());
+
+// CORS configuration - Allow all origins for development
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(express.json());
 // app.use(express.static('public')); // Commented out to prevent conflicts with API routes
 

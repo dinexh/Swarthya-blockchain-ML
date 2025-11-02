@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/swasthya';
-export const port = Number(process.env.PORT || 5000);
+export const port = Number(process.env.PORT || 4000);
 
 export async function connectDatabase(): Promise<{ connection: mongoose.Connection; bucket: mongoose.mongo.GridFSBucket | null }> {
   await mongoose.connect(mongoUri);

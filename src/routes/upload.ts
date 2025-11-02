@@ -46,7 +46,7 @@ export async function handleUpload(
 
     const filename = `${Date.now()}-${req.file.originalname}`;
 
-    // Upload to GridFS
+    // Upload to GridFS (for file storage)
     const fileId = await uploadFileToGridFS(
       bucket,
       filename,
@@ -58,9 +58,9 @@ export async function handleUpload(
     // Compute file hash
     const fileHash = await computeFileHash(conn, 'uploads', filename, false);
 
-    // Add block to chain with metadata
+    // Add block to chain with metadata (proper prevHash linking is handled in addBlockToChain)
     const block = await addBlockToChain(conn, {
-      fileId: fileId,
+      fileId: fileId.toString(),
       filename: filename,
       fileHash: fileHash,
       timestamp: Date.now(),
@@ -70,13 +70,42 @@ export async function handleUpload(
       metadata: metadataObj
     });
 
+    // Create clean medical record document (no chunks, just metadata)
+    if (!conn.db) throw new Error('Database connection not ready');
+    const recordsColl = conn.db.collection('medical_records');
+    const recordDoc = {
+      _id: new mongoose.Types.ObjectId(),
+      recordId: fileId.toString(),
+      patientId: patientId,
+      filename: filename,
+      originalName: req.file.originalname,
+      fileHash: fileHash,
+      blockHash: block.hash,
+      blockIndex: block.index,
+      prevHash: block.prevHash,
+      contentType: req.file.mimetype,
+      size: req.file.size,
+      labels: labelsArray,
+      tags: tagsArray,
+      metadata: {
+        ...metadataObj,
+        uploadedAt: new Date(),
+        uploadedBy: metadataObj.uploadedBy || patientId
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    await recordsColl.insertOne(recordDoc);
+
     res.json({
       success: true,
-      file: {
-        id: fileId,
+      message: 'Record uploaded and stored in blockchain',
+      record: {
+        id: recordDoc._id.toString(),
+        recordId: fileId.toString(),
         filename: filename,
         size: req.file.size,
-        uploadDate: new Date(),
+        uploadDate: recordDoc.createdAt,
         contentType: req.file.mimetype
       },
       block: block
@@ -142,9 +171,38 @@ export async function handleStoreMetadata(
       metadata: metadataObj
     });
 
+    // Create clean medical record document
+    if (!conn.db) throw new Error('Database connection not ready');
+    const recordsColl = conn.db.collection('medical_records');
+    const recordDoc = {
+      _id: new mongoose.Types.ObjectId(),
+      recordId: fileId,
+      patientId: patientId,
+      filename: filename,
+      originalName: filename,
+      fileHash: fileHash,
+      blockHash: block.hash,
+      blockIndex: block.index,
+      prevHash: block.prevHash,
+      contentType: 'application/json',
+      size: 0,
+      labels: labelsArray,
+      tags: tagsArray,
+      metadata: metadataObj,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    await recordsColl.insertOne(recordDoc);
+
     res.json({
       success: true,
       message: 'Medical record metadata stored in blockchain',
+      record: {
+        id: recordDoc._id.toString(),
+        recordId: fileId,
+        blockHash: block.hash,
+        prevHash: block.prevHash
+      },
       block: block,
       fileId: fileId,
       hash: fileHash

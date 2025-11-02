@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 export const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/swasthya';
-export const port = Number(process.env.PORT || 4000);
+export const port = Number(process.env.PORT || 5001); // Changed to 5001 to avoid MacOS AirPlay port conflict
 export async function connectDatabase() {
     await mongoose.connect(mongoUri);
     const conn = mongoose.connection;

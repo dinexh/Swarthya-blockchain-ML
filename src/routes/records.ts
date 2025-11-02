@@ -20,11 +20,48 @@ export async function handleGetRecordsByPatient(
       return;
     }
 
+    if (!conn.db) {
+      res.status(500).json({ error: 'Database connection not ready' });
+      return;
+    }
+
+    // Get records from medical_records collection (clean, no chunks)
+    const recordsColl = conn.db.collection('medical_records');
+    const records = await recordsColl
+      .find({ patientId: patientId })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // Also get blockchain blocks for verification info
     const blocks = await getBlocksByPatientId(conn, patientId);
+    const blocksMap = new Map(blocks.map(b => [b.data.fileId, b]));
+
+    // Combine records with blockchain verification
+    const enrichedRecords = records.map(record => ({
+      id: record._id.toString(),
+      recordId: record.recordId,
+      patientId: record.patientId,
+      filename: record.filename,
+      originalName: record.originalName || record.filename,
+      fileHash: record.fileHash,
+      blockHash: record.blockHash,
+      blockIndex: record.blockIndex,
+      prevHash: record.prevHash,
+      contentType: record.contentType,
+      size: record.size,
+      labels: record.labels || [],
+      tags: record.tags || [],
+      metadata: record.metadata || {},
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      blockchainVerified: !!record.blockHash,
+      block: blocksMap.get(record.recordId) || null
+    }));
+
     res.json({
       success: true,
-      count: blocks.length,
-      records: blocks
+      count: enrichedRecords.length,
+      records: enrichedRecords
     });
   } catch (error: any) {
     console.error('Error fetching patient records:', error);

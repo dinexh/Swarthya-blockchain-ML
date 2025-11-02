@@ -19,18 +19,19 @@ export class AIMLService {
     try {
       let aiResponse: DiagnosisResponse;
 
-      // Try Gemini first (best medical reasoning)
+      // Skip Gemini if model name is wrong, go directly to Groq
+      // Try Groq first (more reliable)
       try {
-        console.log('🤖 Attempting diagnosis with Gemini...');
-        aiResponse = await getDiagnosisFromGemini(request);
-        console.log('✅ Using: Gemini (Google)');
-      } catch (geminiError: any) {
-        // Fallback to Groq (errors are expected if Gemini is misconfigured)
-        console.log('⚠️  Gemini failed, trying Groq...');
+        console.log('🤖 Attempting diagnosis with Groq...');
+        aiResponse = await getDiagnosisFromGroq(request);
+        console.log('✅ Using: Groq (Fast Inference)');
+      } catch (groqError: any) {
+        // Fallback to Gemini
+        console.log('⚠️  Groq failed, trying Gemini...');
         try {
-          aiResponse = await getDiagnosisFromGroq(request);
-          console.log('✅ Using: Groq (Fast Inference)');
-        } catch (groqError: any) {
+          aiResponse = await getDiagnosisFromGemini(request);
+          console.log('✅ Using: Gemini (Google)');
+        } catch (geminiError: any) {
           // Both APIs failed - provide mock response for testing
           console.log('⚠️  Both APIs failed, using mock response for testing...');
           aiResponse = this.getMockDiagnosisResponse(request);
@@ -99,11 +100,10 @@ export class AIMLService {
         condition: selectedCondition,
         probability: 0.65 + Math.random() * 0.25, // 65-90% confidence
         description,
-        recommendations: [
-          'Consult with a healthcare provider for accurate diagnosis',
-          'Rest and stay hydrated',
-          'Monitor symptoms closely',
-          'Seek immediate medical attention if symptoms worsen'
+        medications: [
+          'Paracetamol 500mg - 1-2 tablets every 4-6 hours (max 4g per day)',
+          'Ibuprofen 400mg - 1 tablet every 6-8 hours (if no contraindications)',
+          'Consult a healthcare professional for prescription medications if symptoms persist'
         ]
       }],
       confidence: 0.75,

@@ -18,6 +18,7 @@ export type DiagnosisSuggestion = {
   probability: number;
   description?: string;
   recommendations?: string[];
+  medications?: string[];
 };
 
 export type BlockWithAnalysis = {
